@@ -62,12 +62,22 @@ export function byoOauthClientAvailable(): boolean {
   }
 }
 
-const ADC_PATH = path.join(
-  /* turbopackIgnore: true */ os.homedir(),
-  ".config",
-  "gcloud",
-  "application_default_credentials.json",
-);
+/**
+ * Where gcloud writes Application Default Credentials. gcloud (and the
+ * Python google-auth library the vendored scripts use) honour
+ * `CLOUDSDK_CONFIG`, so we must too — otherwise two installs that isolate
+ * their Google sign-ins via `CLOUDSDK_CONFIG` would both read the shared
+ * `~/.config/gcloud` file and report the wrong account as signed in.
+ * Resolved lazily so a value loaded from `.env.local` is always picked up.
+ */
+export function adcFilePath(): string {
+  const configDir = process.env.CLOUDSDK_CONFIG?.trim();
+  return path.join(
+    configDir ||
+      path.join(/* turbopackIgnore: true */ os.homedir(), ".config", "gcloud"),
+    "application_default_credentials.json",
+  );
+}
 
 const DETECT_TIMEOUT_MS = 5_000;
 const SHORT_TIMEOUT_MS = 10_000;
@@ -183,8 +193,9 @@ interface AdcFile {
 /** Sync read so it composes with the existing sync availability gates. */
 export function readAdcFileSync(): AdcFile | null {
   try {
-    if (!fs.existsSync(/* turbopackIgnore: true */ ADC_PATH)) return null;
-    const raw = fs.readFileSync(/* turbopackIgnore: true */ ADC_PATH, "utf8");
+    const adcPath = adcFilePath();
+    if (!fs.existsSync(/* turbopackIgnore: true */ adcPath)) return null;
+    const raw = fs.readFileSync(/* turbopackIgnore: true */ adcPath, "utf8");
     return JSON.parse(raw) as AdcFile;
   } catch {
     return null;
@@ -466,13 +477,12 @@ export const SCOPE = {
 /* paths (exported for tests / debugging)                                      */
 /* -------------------------------------------------------------------------- */
 
-export const ADC_FILE_PATH = ADC_PATH;
 export const GCLOUD_BIN_PATH = GCLOUD_BIN;
 
 /** Async existence check that doesn't block on a sync `fs.existsSync`. */
 export async function adcFileExists(): Promise<boolean> {
   try {
-    await fsp.access(/* turbopackIgnore: true */ ADC_PATH, fs.constants.R_OK);
+    await fsp.access(/* turbopackIgnore: true */ adcFilePath(), fs.constants.R_OK);
     return true;
   } catch {
     return false;

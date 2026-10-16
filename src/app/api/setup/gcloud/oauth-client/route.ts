@@ -87,10 +87,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Honour an already-configured client path so installs that keep separate
+  // OAuth clients (one per portal) don't overwrite each other's file in the
+  // shared ~/.config/seo-office default.
+  const configuredPath = process.env.SEO_OFFICE_GCLOUD_CLIENT_ID_FILE?.trim();
   const configRoot =
     process.env.XDG_CONFIG_HOME?.trim() || path.join(os.homedir(), ".config");
-  const configDir = path.join(configRoot, "seo-office");
-  const targetPath = path.join(configDir, "gcp-oauth-client.json");
+  const targetPath = configuredPath
+    ? path.resolve(configuredPath)
+    : path.join(configRoot, "seo-office", "gcp-oauth-client.json");
+  const configDir = path.dirname(targetPath);
   const tempPath = path.join(
     configDir,
     `.gcp-oauth-client.${process.pid}.${Date.now()}.tmp`,

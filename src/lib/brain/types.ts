@@ -377,6 +377,8 @@ export const MinimalClientInputSchema = z.object({
   clientName: onboardingString.min(1).max(80).optional(),
   owner: onboardingString.min(1).max(80).optional(),
   businessType: onboardingString.min(2).max(80).optional(),
+  /** Explicit vault slug; derived from clientName when omitted. */
+  slug: ClientSlug.optional(),
 });
 export type MinimalClientInput = z.infer<typeof MinimalClientInputSchema>;
 

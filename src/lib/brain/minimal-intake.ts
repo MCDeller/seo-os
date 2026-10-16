@@ -62,6 +62,7 @@ export function expandMinimalClientInput(payload: unknown): ClientInput {
     targetPersona: `Default audience for ${brand} — refine after first research sweep.`,
     primaryCompetitors: [],
     measurementAccess: [],
+    ...(minimal.slug ? { slug: minimal.slug } : {}),
   };
   return ClientInputSchema.parse(full);
 }

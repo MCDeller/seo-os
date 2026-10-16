@@ -123,3 +123,21 @@ test("ensureManifestMigrated leaves canonical alone when it already exists", asy
   const got = await fsp.readFile(manifestPath(slug), "utf8");
   assert.equal(got, '{"canonical":true}\n');
 });
+
+test("SEO_OFFICE_VAULTS_DIR relocates vaults but not index.db", async () => {
+  const { vaultsRoot, vaultRoot, indexDbPath, dataRoot } = await import(
+    "../paths.ts"
+  );
+  const elsewhere = path.join(tmpRoot, "elsewhere", "clients");
+  const previous = process.env.SEO_OFFICE_VAULTS_DIR;
+  process.env.SEO_OFFICE_VAULTS_DIR = elsewhere;
+  try {
+    assert.equal(vaultsRoot(), elsewhere);
+    assert.equal(vaultRoot("acme"), path.join(elsewhere, "acme"));
+    assert.equal(indexDbPath(), path.join(dataRoot(), "index.db"));
+  } finally {
+    if (previous === undefined) delete process.env.SEO_OFFICE_VAULTS_DIR;
+    else process.env.SEO_OFFICE_VAULTS_DIR = previous;
+  }
+  assert.equal(vaultsRoot(), path.join(dataRoot(), "vaults"));
+});

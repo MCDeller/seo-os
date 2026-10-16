@@ -2,7 +2,8 @@
  * Single source of truth for where the brain lives on disk.
  *
  * Override the root via SEO_OFFICE_DATA_DIR env var; defaults to ./.seo-office
- * resolved against the Next.js process cwd.
+ * resolved against the Next.js process cwd. Vaults alone can be relocated with
+ * SEO_OFFICE_VAULTS_DIR (see `vaultsRoot()`).
  */
 import "server-only";
 import fs from "node:fs";
@@ -31,7 +32,16 @@ export function dataRoot(): string {
   );
 }
 
+/**
+ * Client vaults live under `<dataRoot>/vaults` by default. Set
+ * SEO_OFFICE_VAULTS_DIR to keep them elsewhere (e.g. a synced or Windows
+ * drive) while `index.db` and the cache stay on a fast local filesystem.
+ */
 export function vaultsRoot(): string {
+  const override = process.env.SEO_OFFICE_VAULTS_DIR?.trim();
+  if (override) {
+    return path.resolve(/* turbopackIgnore: true */ process.cwd(), override);
+  }
   return path.join(dataRoot(), "vaults");
 }
 
