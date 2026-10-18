@@ -154,7 +154,10 @@ function createIterator(
   }
 
   function start(): void {
-    const bin = opts.bin ?? "claude";
+    // Honour the same override as the claude-cli provider so both paths run
+    // the same binary (e.g. on WSL, where a Windows `claude` can shadow the
+    // Linux one on PATH).
+    const bin = opts.bin ?? (process.env.SEO_OFFICE_CLAUDE_BIN?.trim() || "claude");
     const args = buildArgs(opts);
 
     // Parser state — threaded across both live stdout chunks and the
